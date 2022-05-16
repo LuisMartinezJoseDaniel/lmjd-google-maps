@@ -1,7 +1,7 @@
 let map, infoWindow;
 function initMap() {
   let options = {
-    zoom: 13,
+    zoom: 8,
     center: { lat: 23.634501, lng: -102.552784 },
   };
 
@@ -32,7 +32,7 @@ function initMap() {
 
   const locationButton = crearBoton();
 
-  map.controls[google.maps.ControlPosition.TOP_CENTER].push(locationButton);
+  map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(locationButton);
 
   locationButton.addEventListener("click", () => {
 
