@@ -1,5 +1,6 @@
 let map, infoWindow;
-function initMap() {
+
+async function initMap() {
   let options = {
     zoom: 8,
     center: { lat: 23.634501, lng: -102.552784 },
@@ -27,7 +28,6 @@ function initMap() {
     });
 
     map.setCenter(coords);
-
   };
 
   const locationButton = crearBoton();
@@ -35,18 +35,24 @@ function initMap() {
   map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(locationButton);
 
   locationButton.addEventListener("click", () => {
-
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        ({coords}) => {
-          const pos = {
-            lat: coords.latitude,
-            lng: coords.longitude,
-          };
-          addMarker(pos); //Agregar marcador a mi ubicacion
-        }
-      );
+      navigator.geolocation.getCurrentPosition(({ coords }) => {
+        const pos = {
+          lat: coords.latitude,
+          lng: coords.longitude,
+        };
+        addMarker(pos); //Agregar marcador a mi ubicacion
+      });
     }
+  });
+
+  const arrayCoordenadas = await getCoordenadasApi();
+  //Limpiar las coordenadas
+  const coordsActualizadas = arrayCoordenadas.map(
+    ({ attributes: { lat, lng } }) => ({ lat, lng })
+  );
+  coordsActualizadas.forEach((coordenada) => {
+    addMarker(coordenada);
   });
 }
 
@@ -57,4 +63,12 @@ const crearBoton = () => {
   btnUbicacion.classList.add("btn-primary");
 
   return btnUbicacion;
-}
+};
+
+const getCoordenadasApi = async () => {
+  const url = `http://localhost:1337/api/coordenadas`;
+  const respuesta = await fetch(url);
+  const { data: coordenadas } = await respuesta.json();
+
+  return coordenadas;
+};
