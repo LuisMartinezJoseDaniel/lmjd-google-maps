@@ -1,3 +1,4 @@
+
 let map, infoWindow;
 
 async function initMap() {
@@ -9,12 +10,10 @@ async function initMap() {
   map = new google.maps.Map(document.getElementById("map"), options);
 
   //infoWindow
-  infoWindow = new google.maps.InfoWindow({
-    content: "<h3>Hey estoy aquí</h3>",
-  });
+  infoWindow = new google.maps.InfoWindow();
 
   //Agregar marcardor
-  const addMarker = (coords) => {
+  const addMarker = (coords, mensaje) => {
     const marker = new google.maps.Marker({
       position: coords,
       map,
@@ -23,7 +22,9 @@ async function initMap() {
 
     marker.addListener("click", () => {
       infoWindow.setPosition(coords);
-      infoWindow.setContent("<h3> Hey estoy aqui</h3>");
+      infoWindow.setContent(
+        `<h3>${mensaje ?? "Coordenadas desde la base de datos"}</h3>`
+      );
       infoWindow.open(map, marker);
     });
 
@@ -31,30 +32,52 @@ async function initMap() {
   };
 
   const locationButton = crearBoton();
-
   map.controls[google.maps.ControlPosition.LEFT_BOTTOM].push(locationButton);
 
   locationButton.addEventListener("click", () => {
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(({ coords }) => {
-        const pos = {
-          lat: coords.latitude,
-          lng: coords.longitude,
-        };
-        addMarker(pos); //Agregar marcador a mi ubicacion
-      });
+      navigator.geolocation.getCurrentPosition(
+        ({ coords }) => {
+          const pos = {
+            lat: coords.latitude,
+            lng: coords.longitude,
+          };
+          addMarker(pos, "Mi ubicación actual"); //Agregar marcador a mi ubicacion
+        },
+        () => {
+          handleLocationError(true, infoWindow, map.getCenter());
+        }
+      );
+    } else {
+      handleLocationError(false, infoWindow, map.getCenter());
     }
   });
 
   const arrayCoordenadas = await getCoordenadasApi();
+
   //Limpiar las coordenadas
   const coordsActualizadas = arrayCoordenadas.map(
     ({ attributes: { lat, lng } }) => ({ lat, lng })
   );
+
+  //agregar multiples marcadores de la base de datos
   coordsActualizadas.forEach((coordenada) => {
     addMarker(coordenada);
   });
+};
+
+//Manejar error en caso de no tener geolocalizacion
+function handleLocationError(browserHasGeolocation, infoWindow, pos) {
+  infoWindow.setPosition(pos);
+  infoWindow.setContent(
+    browserHasGeolocation
+      ? "Error: El servicio de localización ha fallado."
+      : "Error: Tu navegador no soporta la geolocalización."
+  );
+  infoWindow.open(map);
 }
+
+
 
 const crearBoton = () => {
   const btnUbicacion = document.createElement("button");
@@ -66,9 +89,13 @@ const crearBoton = () => {
 };
 
 const getCoordenadasApi = async () => {
-  const url = `http://localhost:1337/api/coordenadas`;
-  const respuesta = await fetch(url);
-  const { data: coordenadas } = await respuesta.json();
+  try {
+    const url = `http://localhost:1337/api/coordenadas`;
+    const respuesta = await fetch(url);
+    const { data: coordenadas } = await respuesta.json();
 
-  return coordenadas;
+    return coordenadas;
+  } catch (error) {
+    console.error(error);
+  }
 };
