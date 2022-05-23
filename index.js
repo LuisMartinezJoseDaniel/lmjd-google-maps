@@ -1,4 +1,3 @@
-
 let map, infoWindow;
 
 async function initMap() {
@@ -53,18 +52,23 @@ async function initMap() {
     }
   });
 
-  const arrayCoordenadas = await getCoordenadasApi();
+  try {
+    const arrayCoordenadas = await getCoordenadasApi();
 
-  //Limpiar las coordenadas
-  const coordsActualizadas = arrayCoordenadas.map(
-    ({ attributes: { lat, lng } }) => ({ lat, lng })
-  );
+    if (!!arrayCoordenadas) {
+      const coordsActualizadas = arrayCoordenadas.map(
+        ({ attributes: { lat, lng } }) => ({ lat, lng })
+      );
 
-  //agregar multiples marcadores de la base de datos
-  coordsActualizadas.forEach((coordenada) => {
-    addMarker(coordenada);
-  });
-};
+      //agregar multiples marcadores de la base de datos
+      coordsActualizadas.forEach((coordenada) => {
+        addMarker(coordenada);
+      });
+    }
+  } catch (error) {
+    console.log(error);
+  }
+}
 
 //Manejar error en caso de no tener geolocalizacion
 function handleLocationError(browserHasGeolocation, infoWindow, pos) {
@@ -76,8 +80,6 @@ function handleLocationError(browserHasGeolocation, infoWindow, pos) {
   );
   infoWindow.open(map);
 }
-
-
 
 const crearBoton = () => {
   const btnUbicacion = document.createElement("button");
@@ -92,10 +94,12 @@ const getCoordenadasApi = async () => {
   try {
     const url = `http://localhost:1337/api/coordenadas`;
     const respuesta = await fetch(url);
+    if (!!respuesta) {
+      return;
+    }
     const { data: coordenadas } = await respuesta.json();
-
     return coordenadas;
   } catch (error) {
-    console.error(error);
+    throw new Error("No se ha podido hacer el fetch a la API");
   }
 };
